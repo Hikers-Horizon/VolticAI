@@ -81,6 +81,19 @@ export type Signal = {
   is_tradeable: boolean;
   rejection_reasons: string[];
   disclaimer: string;
+  publish_text?: string;
+  thesis?: string;
+  summary?: string;
+  history_summary?: string;
+  news_bias?: string;
+  invalidation?: string;
+  quantity?: number;
+  capital?: number;
+  setup_grade?: string;
+  position_value?: number;
+  risk_amount?: number;
+  reward_t1?: number;
+  news?: { title: string; link?: string; bias?: string }[];
   factors?: { name: string; score: number; weight: number; detail: string }[];
 };
 
