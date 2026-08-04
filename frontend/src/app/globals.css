@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #000000;
+  --bg-secondary: #0B0B0B;
+  --bg-card: #111111;
+  --border: #222222;
+  --text: #FFFFFF;
+  --text-secondary: #B3B3B3;
+  --profit: #22C55E;
+  --loss: #EF4444;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  background: #000000;
+  color: #FFFFFF;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Glass card utility */
+@layer components {
+  .glass {
+    @apply bg-bg-card/80 backdrop-blur-glass border border-border rounded-card shadow-card;
+  }
+
+  .glass-elevated {
+    @apply bg-bg-elevated/90 backdrop-blur-glass border border-border rounded-card shadow-elevated;
+  }
+
+  .btn-primary {
+    @apply px-4 py-2 bg-white text-black font-medium rounded-button
+           hover:bg-white/90 active:scale-[0.98] transition-all duration-150
+           disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply px-4 py-2 bg-transparent text-white border border-border rounded-button
+           hover:bg-bg-hover hover:border-border-strong active:scale-[0.98]
+           transition-all duration-150;
+  }
+
+  .btn-danger {
+    @apply px-4 py-2 bg-loss/10 text-loss border border-loss/30 rounded-button
+           hover:bg-loss/20 active:scale-[0.98] transition-all duration-150;
+  }
+
+  .input-field {
+    @apply w-full px-3 py-2.5 bg-bg-secondary border border-border rounded-input
+           text-white placeholder:text-text-muted
+           focus:outline-none focus:border-border-strong focus:ring-1 focus:ring-white/10
+           transition-all duration-150;
+  }
+
+  .skeleton {
+    @apply bg-gradient-to-r from-bg-card via-bg-hover to-bg-card
+           bg-[length:200%_100%] animate-shimmer rounded-lg;
+  }
+
+  .text-profit {
+    color: var(--profit);
+  }
+  .text-loss {
+    color: var(--loss);
+  }
+
+  .divider {
+    @apply border-t border-border;
+  }
+}
+
+/* Selection */
+::selection {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
