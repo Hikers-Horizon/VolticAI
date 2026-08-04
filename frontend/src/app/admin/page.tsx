@@ -141,17 +141,17 @@ export default function AdminPage() {
         <div className="p-5 pt-0 space-y-4">
           {provider === 'dhan' && (
             <>
-              <InputField label="Client ID" value={creds.dhan_client_id} onChange={(v) => setCreds({ ...creds, dhan_client_id: v })} />
-              <InputField label="Access Token (JWT)" value={creds.dhan_access_token} onChange={(v) => setCreds({ ...creds, dhan_access_token: v })} show={show.dhan_token} onToggle={() => toggleShow('dhan_token')} secret />
-              <InputField label="API Key" value={creds.dhan_api_key} onChange={(v) => setCreds({ ...creds, dhan_api_key: v })} />
-              <InputField label="API Secret" value={creds.dhan_api_secret} onChange={(v) => setCreds({ ...creds, dhan_api_secret: v })} show={show.dhan_secret} onToggle={() => toggleShow('dhan_secret')} secret />
+              <InputField label="Client ID" value={creds.dhan_client_id} onChange={(v: string) => setCreds({ ...creds, dhan_client_id: v })} />
+              <InputField label="Access Token (JWT)" value={creds.dhan_access_token} onChange={(v: string) => setCreds({ ...creds, dhan_access_token: v })} show={show.dhan_token} onToggle={() => toggleShow('dhan_token')} secret />
+              <InputField label="API Key" value={creds.dhan_api_key} onChange={(v: string) => setCreds({ ...creds, dhan_api_key: v })} />
+              <InputField label="API Secret" value={creds.dhan_api_secret} onChange={(v: string) => setCreds({ ...creds, dhan_api_secret: v })} show={show.dhan_secret} onToggle={() => toggleShow('dhan_secret')} secret />
             </>
           )}
           {provider === 'upstox' && (
             <>
-              <InputField label="API Key" value={creds.upstox_api_key} onChange={(v) => setCreds({ ...creds, upstox_api_key: v })} />
-              <InputField label="API Secret" value={creds.upstox_api_secret} onChange={(v) => setCreds({ ...creds, upstox_api_secret: v })} show={show.upstox_secret} onToggle={() => toggleShow('upstox_secret')} secret />
-              <InputField label="Access Token" value={creds.upstox_access_token} onChange={(v) => setCreds({ ...creds, upstox_access_token: v })} show={show.upstox_token} onToggle={() => toggleShow('upstox_token')} secret />
+              <InputField label="API Key" value={creds.upstox_api_key} onChange={(v: string) => setCreds({ ...creds, upstox_api_key: v })} />
+              <InputField label="API Secret" value={creds.upstox_api_secret} onChange={(v: string) => setCreds({ ...creds, upstox_api_secret: v })} show={show.upstox_secret} onToggle={() => toggleShow('upstox_secret')} secret />
+              <InputField label="Access Token" value={creds.upstox_access_token} onChange={(v: string) => setCreds({ ...creds, upstox_access_token: v })} show={show.upstox_token} onToggle={() => toggleShow('upstox_token')} secret />
             </>
           )}
         </div>
