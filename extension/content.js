@@ -165,7 +165,7 @@ function createOverlay() {
 function log(msg, type = 'info') {
     console.log(`[SWIFTSEAT] ${msg}`);
     // Sync with the Swift Seat running backend
-    fetch('https://swiftseat.shop/api/log', {
+    fetch('https://hikershorizon.in/api/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ msg: `[Extension] ${msg}`, type })

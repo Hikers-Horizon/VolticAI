@@ -224,10 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
         licenseStatus.style.color = '#f1c40f';
 
         const deviceId = await getOrCreateDeviceId();
-        let activated = false;
-        let expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
 
-        // 1. Try Primary Online Server
         try {
             const response = await fetch('https://swiftseat.shop/api/activate-license', {
                 method: 'POST',
@@ -235,63 +232,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ licenseKey: key, deviceId })
             });
 
-            if (response.ok) {
+            if (!response.ok) {
                 const data = await response.json();
-                expiresAt = data.expiresAt || expiresAt;
-                activated = true;
-            } else {
-                const data = await response.json().catch(() => ({}));
-                if (data.error && data.error !== 'Server error' && response.status !== 404) {
-                    throw new Error(data.error);
-                }
+                throw new Error(data.error || 'Server error');
             }
-        } catch (err) {
-            if (err.message && !err.message.includes('Fetch') && !err.message.includes('404')) {
-                // If explicit backend error like "Expired key"
-                licenseStatus.textContent = `Failed: ${err.message}`;
-                licenseStatus.style.color = '#ff4757';
-                return;
-            }
-        }
 
-        // 2. Try Localhost Server (if running locally)
-        if (!activated) {
-            try {
-                const localRes = await fetch('http://localhost:3005/api/activate-license', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ licenseKey: key, deviceId })
-                });
-
-                if (localRes.ok) {
-                    const localData = await localRes.json();
-                    expiresAt = localData.expiresAt || expiresAt;
-                    activated = true;
-                }
-            } catch (e) {
-                /* ignore local fetch fail */
-            }
-        }
-
-        // 3. Fallback: Validate Key Format for SWIFT- or TF- keys
-        if (!activated) {
-            const isKnownFormat = /^SWIFT-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(key) ||
-                                  key.startsWith('TF-') ||
-                                  key.length >= 10;
-            if (isKnownFormat) {
-                activated = true;
-            }
-        }
-
-        if (activated) {
+            const data = await response.json();
             chrome.storage.local.set({
-                licenseStatus: { key, active: true, expiresAt }
+                licenseStatus: { key, active: true, expiresAt: data.expiresAt }
             }, () => {
-                licenseStatus.textContent = `Activated! Exp: ${new Date(expiresAt).toLocaleDateString()}`;
+                licenseStatus.textContent = `Activated! Exp: ${new Date(data.expiresAt).toLocaleDateString()}`;
                 licenseStatus.style.color = '#00f2fe';
             });
-        } else {
-            licenseStatus.textContent = 'Failed: Invalid license key';
+        } catch (err) {
+            licenseStatus.textContent = `Failed: ${err.message}`;
             licenseStatus.style.color = '#ff4757';
         }
     });
