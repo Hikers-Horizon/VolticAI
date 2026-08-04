@@ -28,8 +28,7 @@ export function formatVolume(value: number): string {
   return String(value);
 }
 
-export function pnlClass(value: number): string {
-  if (value > 0) return 'text-profit';
-  if (value < 0) return 'text-loss';
-  return 'text-text-secondary';
+export function pnlClass(value: number, extraClass?: string): string {
+  const base = value > 0 ? 'text-profit' : value < 0 ? 'text-loss' : 'text-text-secondary';
+  return extraClass ? cn(base, extraClass) : base;
 }
