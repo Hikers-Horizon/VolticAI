@@ -193,13 +193,7 @@ export function TopNav() {
           )}
         </div>
 
-        {/* Data provider */}
-        <div className="flex items-center gap-2 rounded-button border border-border bg-bg-card px-3 py-1.5">
-          <Wifi size={12} className={status?.live ? 'text-profit' : 'text-text-muted'} />
-          <span className="text-xs text-text-secondary">
-            {status?.live ? 'Upstox Live' : 'Upstox Active'}
-          </span>
-        </div>
+
 
         {/* Notifications */}
         <button className="relative flex h-9 w-9 items-center justify-center rounded-button border border-border hover:bg-bg-hover transition-colors">

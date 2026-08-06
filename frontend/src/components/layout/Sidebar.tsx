@@ -99,24 +99,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      {!collapsed && (
-        <div className="border-t border-border p-4">
-          <div className="rounded-button border border-border bg-bg-card px-3 py-2.5">
-            <div className="text-[10px] uppercase tracking-wider text-text-muted mb-1">Mode</div>
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-profit animate-pulse-soft" />
-              <span className="text-xs font-medium text-white">Live Data · Analysis</span>
-            </div>
-            <div className="text-[10px] text-text-muted mt-1">No buy / sell</div>
-          </div>
-        </div>
-      )}
-      {collapsed && (
-        <div className="border-t border-border p-3 flex justify-center">
-          <span className="h-2 w-2 rounded-full bg-profit animate-pulse-soft" />
-        </div>
-      )}
+
     </aside>
   );
 }

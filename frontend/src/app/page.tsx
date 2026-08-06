@@ -5,7 +5,6 @@ import { api, Signal } from '@/lib/api';
 import { MarketOverview } from '@/components/dashboard/MarketOverview';
 import { TopMovers } from '@/components/dashboard/TopMovers';
 import { WatchlistWidget } from '@/components/dashboard/WatchlistWidget';
-import { PortfolioWidget } from '@/components/dashboard/PortfolioWidget';
 import { TradingChart } from '@/components/charts/TradingChart';
 import { SignalCard } from '@/components/signals/SignalCard';
 import { SignalCardSkeleton } from '@/components/ui/Skeleton';
@@ -44,19 +43,16 @@ export default function DashboardPage() {
           </p>
         </div>
         <p className="text-[11px] text-text-muted max-w-xs text-right leading-relaxed">
-          Live Dhan data · AI analysis only · No buy/sell execution
+          Live Upstox Data · AI Signals Engine
         </p>
       </div>
 
-      {/* Top row: indices + portfolio + breadth */}
+      {/* Top row: indices + breadth */}
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-4">
+        <div className="col-span-6">
           <MarketOverview />
         </div>
-        <div className="col-span-4">
-          <PortfolioWidget />
-        </div>
-        <div className="col-span-4">
+        <div className="col-span-6">
           <Card>
             <CardHeader title="Market Breadth" subtitle="NSE Advance / Decline" />
             {breadth ? (
