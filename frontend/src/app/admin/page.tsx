@@ -18,7 +18,7 @@ type Credentials = {
 };
 
 // Simple admin password (in production, use proper auth)
-const ADMIN_PASSWORD = 'volticai2026'; // Change this to your secure password
+const ADMIN_PASSWORD = 'admin';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
