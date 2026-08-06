@@ -49,6 +49,10 @@ export const api = {
     request<any>(
       `/api/v1/signals/scanner/momentum?limit=${limit}&tradeable_only=${tradeableOnly}`
     ),
+  optionsSignals: (underlying?: string, limit = 8) =>
+    request<any>(
+      `/api/v1/signals/scanner/options?${underlying ? `underlying=${underlying}&` : ''}limit=${limit}`
+    ),
 
   // Watchlist
   watchlists: () => request<any>('/api/v1/watchlist/'),

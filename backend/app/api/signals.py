@@ -4,7 +4,7 @@ AI Trading Signals endpoints
 from fastapi import APIRouter, Query
 from typing import List, Optional
 from datetime import datetime
-from app.services.signal_service import signal_service, DEFAULT_SCAN_LIST
+from app.services.signal_service import signal_service, DEFAULT_SCAN_LIST, DASHBOARD_SCAN
 from app.services.options_signals import options_signal_service
 
 router = APIRouter()
