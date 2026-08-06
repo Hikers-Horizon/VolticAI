@@ -5,6 +5,7 @@ from datetime import datetime
 import pandas as pd
 from loguru import logger
 from app.services.dhan_live import dhan_client
+from app.services.upstox_live import upstox_client
 
 DEFAULT_UNIVERSE = [
     "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN",
@@ -33,8 +34,16 @@ INDEX_SYMBOLS = ["NIFTY", "BANKNIFTY", "FINNIFTY"]
 
 
 class MarketDataService:
+    def _active_client(self):
+        if upstox_client.configured:
+            return upstox_client
+        if dhan_client.configured:
+            return dhan_client
+        return upstox_client
+
     async def provider_status(self) -> dict:
-        return await dhan_client.status()
+        client = self._active_client()
+        return await client.status()
 
     async def get_status(self) -> Dict[str, Any]:
         now = datetime.now()
@@ -44,9 +53,10 @@ class MarketDataService:
             or (now.hour == 15 and now.minute < 30)
         )
         vix = None
-        if dhan_client.configured:
+        client = self._active_client()
+        if client.configured:
             try:
-                q = await dhan_client.get_quote("INDIA VIX")
+                q = await client.get_quote("INDIA VIX")
                 vix = q.get("ltp")
             except Exception:
                 pass
@@ -57,33 +67,34 @@ class MarketDataService:
             "market_close": "15:30",
             "status": "OPEN" if is_open else "CLOSED",
             "india_vix": vix,
-            "data_source": "dhan" if dhan_client.configured else "unconfigured",
-            "live": dhan_client.configured,
+            "data_source": getattr(client, "name", "upstox") if client.configured else "unconfigured",
+            "live": client.configured,
         }
 
     async def get_quote(self, symbol: str, exchange: str = "NSE") -> Dict[str, Any]:
-        if not dhan_client.configured:
-            raise RuntimeError("Dhan Data API not configured")
-        return await dhan_client.get_quote(symbol)
+        client = self._active_client()
+        if not client.configured:
+            logger.warning(f"No configured provider, returning default quote for {symbol}")
+            return {"symbol": symbol.upper(), "ltp": 0.0, "change": 0.0, "change_percent": 0.0}
+        return await client.get_quote(symbol)
 
     async def get_quotes(self, symbols: List[str], exchange: str = "NSE") -> List[Dict]:
-        if not dhan_client.configured:
-            raise RuntimeError("Dhan Data API not configured")
-        return await dhan_client.get_quotes(symbols)
+        client = self._active_client()
+        if not client.configured:
+            return []
+        return await client.get_quotes(symbols)
 
     async def get_historical(
         self, symbol: str, interval: str = "5minute",
         from_date: Optional[str] = None, to_date: Optional[str] = None,
     ) -> Dict[str, Any]:
-        if not dhan_client.configured:
-            raise RuntimeError("Dhan Data API not configured")
-        data = await dhan_client.get_historical(symbol, interval)
-        return {"symbol": symbol.upper(), "interval": interval, "data": data, "source": "dhan"}
+        client = self._active_client()
+        data = await client.get_historical(symbol, interval)
+        return {"symbol": symbol.upper(), "interval": interval, "data": data, "source": "upstox" if client == upstox_client else "dhan"}
 
     async def get_ohlcv_df(self, symbol: str, interval: str = "5minute") -> pd.DataFrame:
-        if not dhan_client.configured:
-            return pd.DataFrame(columns=["open", "high", "low", "close", "volume"])
-        return await dhan_client.get_ohlcv_df(symbol, interval)
+        client = self._active_client()
+        return await client.get_ohlcv_df(symbol, interval)
 
     async def top_gainers(self, limit: int = 10) -> List[Dict]:
         # Prefer momentum universe for real day-movers

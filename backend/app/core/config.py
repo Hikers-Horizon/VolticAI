@@ -48,6 +48,7 @@ class Settings(BaseSettings):
     ZERODHA_API_SECRET: str = ""
     UPSTOX_API_KEY: str = ""
     UPSTOX_API_SECRET: str = ""
+    UPSTOX_ACCESS_TOKEN: str = ""
 
     PAPER_TRADING_ENABLED: bool = True
     PAPER_TRADING_CAPITAL: float = 100000.0
