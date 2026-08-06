@@ -1,7 +1,12 @@
 const getApiUrl = () => {
   if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
   if (typeof window !== 'undefined') {
-    return `${window.location.protocol}//${window.location.hostname}:8000`;
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return 'http://localhost:8000';
+    }
+    // Production website (e.g. volticai.online) — use relative URL
+    return '';
   }
   return 'http://localhost:8000';
 };
