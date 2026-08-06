@@ -82,19 +82,11 @@ export default function AdminPage() {
     setSaving(true);
     setMessage('');
     try {
-      const response = await fetch('http://localhost:8000/api/v1/admin/credentials', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...creds, provider }),
-      });
-      if (response.ok) {
-        setMessage('✓ Credentials saved successfully! Restart backend to apply.');
-        setTimeout(() => loadStatus(), 1000);
-      } else {
-        setMessage('✗ Failed to save credentials');
-      }
-    } catch (error) {
-      setMessage('✗ Error saving credentials');
+      const res = await api.saveCredentials({ ...creds, provider });
+      setMessage('✓ Credentials saved successfully! Restart backend to apply.');
+      setTimeout(() => loadStatus(), 1000);
+    } catch (error: any) {
+      setMessage(`✗ ${error.message || 'Error saving credentials'}`);
     } finally {
       setSaving(false);
     }

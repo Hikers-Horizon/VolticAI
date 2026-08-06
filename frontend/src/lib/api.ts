@@ -1,7 +1,13 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const getApiUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  if (typeof window !== 'undefined') {
+    return `${window.location.protocol}//${window.location.hostname}:8000`;
+  }
+  return 'http://localhost:8000';
+};
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${getApiUrl()}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -64,6 +70,8 @@ export const api = {
   setDhan: (body: { client_id: string; access_token: string }) =>
     request<any>('/api/v1/settings/dhan', { method: 'POST', body: JSON.stringify(body) }),
   provider: () => request<any>('/api/v1/market/provider'),
+  saveCredentials: (body: any) =>
+    request<any>('/api/v1/admin/credentials', { method: 'POST', body: JSON.stringify(body) }),
 };
 
 export type Signal = {

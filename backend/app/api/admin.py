@@ -10,7 +10,7 @@ from pathlib import Path
 router = APIRouter()
 
 class CredentialsInput(BaseModel):
-    provider: Literal['dhan', 'upstox']
+    provider: str = "upstox"
     dhan_client_id: str = ""
     dhan_access_token: str = ""
     dhan_api_key: str = ""
@@ -18,6 +18,9 @@ class CredentialsInput(BaseModel):
     upstox_api_key: str = ""
     upstox_api_secret: str = ""
     upstox_access_token: str = ""
+    angelone_api_key: str = ""
+    angelone_client_code: str = ""
+    angelone_access_token: str = ""
 
 @router.post("/credentials")
 async def save_credentials(creds: CredentialsInput):
@@ -43,23 +46,25 @@ async def save_credentials(creds: CredentialsInput):
         # Update based on provider
         env_dict['MARKET_PROVIDER'] = creds.provider.upper()
         
-        if creds.provider == 'dhan':
-            if creds.dhan_client_id:
-                env_dict['DHAN_CLIENT_ID'] = creds.dhan_client_id
-            if creds.dhan_access_token:
-                env_dict['DHAN_ACCESS_TOKEN'] = creds.dhan_access_token
-            if creds.dhan_api_key:
-                env_dict['DHAN_API_KEY'] = creds.dhan_api_key
-            if creds.dhan_api_secret:
-                env_dict['DHAN_API_SECRET'] = creds.dhan_api_secret
-        
-        elif creds.provider == 'upstox':
-            if creds.upstox_api_key:
-                env_dict['UPSTOX_API_KEY'] = creds.upstox_api_key
-            if creds.upstox_api_secret:
-                env_dict['UPSTOX_API_SECRET'] = creds.upstox_api_secret
-            if creds.upstox_access_token:
-                env_dict['UPSTOX_ACCESS_TOKEN'] = creds.upstox_access_token
+        # Always update credentials if provided
+        if creds.upstox_api_key:
+            env_dict['UPSTOX_API_KEY'] = creds.upstox_api_key
+        if creds.upstox_api_secret:
+            env_dict['UPSTOX_API_SECRET'] = creds.upstox_api_secret
+        if creds.upstox_access_token:
+            env_dict['UPSTOX_ACCESS_TOKEN'] = creds.upstox_access_token
+
+        if creds.angelone_api_key:
+            env_dict['ANGELONE_API_KEY'] = creds.angelone_api_key
+        if creds.angelone_client_code:
+            env_dict['ANGELONE_CLIENT_CODE'] = creds.angelone_client_code
+        if creds.angelone_access_token:
+            env_dict['ANGELONE_ACCESS_TOKEN'] = creds.angelone_access_token
+
+        if creds.dhan_client_id:
+            env_dict['DHAN_CLIENT_ID'] = creds.dhan_client_id
+        if creds.dhan_access_token:
+            env_dict['DHAN_ACCESS_TOKEN'] = creds.dhan_access_token
         
         # Write back to .env
         with open(env_path, 'w') as f:
