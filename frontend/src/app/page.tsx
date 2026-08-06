@@ -83,13 +83,13 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Chart + Movers */}
+      {/* Movers + Chart */}
       <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-8">
-          <TradingChart symbol="NIFTY" height={340} />
-        </div>
         <div className="col-span-4 space-y-4">
           <TopMovers />
+        </div>
+        <div className="col-span-8">
+          <TradingChart symbol="NIFTY" height={340} />
         </div>
       </div>
 
