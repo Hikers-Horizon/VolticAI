@@ -5,14 +5,10 @@ import { Card, CardHeader } from '@/components/ui/Card';
 import { api } from '@/lib/api';
 import { Save, Eye, EyeOff, CheckCircle2, XCircle, Lock } from 'lucide-react';
 
-type Provider = 'dhan' | 'upstox' | 'angelone';
+type Provider = 'upstox' | 'angelone';
 
 type Credentials = {
   provider: Provider;
-  dhan_client_id: string;
-  dhan_access_token: string;
-  dhan_api_key: string;
-  dhan_api_secret: string;
   upstox_api_key: string;
   upstox_api_secret: string;
   upstox_access_token: string;
@@ -28,13 +24,9 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  const [provider, setProvider] = useState<Provider>('dhan');
+  const [provider, setProvider] = useState<Provider>('upstox');
   const [creds, setCreds] = useState<Credentials>({
-    provider: 'dhan',
-    dhan_client_id: '',
-    dhan_access_token: '',
-    dhan_api_key: '',
-    dhan_api_secret: '',
+    provider: 'upstox',
     upstox_api_key: '',
     upstox_api_secret: '',
     upstox_access_token: '',
@@ -232,18 +224,7 @@ export default function AdminPage() {
       <Card>
         <CardHeader title="Select Provider" />
         <div className="p-5 pt-0">
-          <div className="grid grid-cols-3 gap-3">
-            <button
-              onClick={() => setProvider('dhan')}
-              className={`px-4 py-3 rounded-button border transition-all ${
-                provider === 'dhan'
-                  ? 'bg-white text-black border-white'
-                  : 'bg-bg-card border-border text-text-secondary hover:border-white/30'
-              }`}
-            >
-              <div className="font-semibold">Dhan</div>
-              <div className="text-xs mt-1 opacity-80">HTTP • ₹499/mo</div>
-            </button>
+          <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setProvider('upstox')}
               className={`px-4 py-3 rounded-button border transition-all ${
@@ -253,7 +234,7 @@ export default function AdminPage() {
               }`}
             >
               <div className="font-semibold">Upstox</div>
-              <div className="text-xs mt-1 opacity-80">WebSocket • Free</div>
+              <div className="text-xs mt-1 opacity-80">WebSocket • Free • 10yr token</div>
             </button>
             <button
               onClick={() => setProvider('angelone')}
@@ -264,7 +245,7 @@ export default function AdminPage() {
               }`}
             >
               <div className="font-semibold">Angel One</div>
-              <div className="text-xs mt-1 opacity-80">WebSocket • Free</div>
+              <div className="text-xs mt-1 opacity-80">WebSocket • Free • Auto-gen</div>
             </button>
           </div>
         </div>
@@ -272,21 +253,16 @@ export default function AdminPage() {
 
       {/* Credentials Form */}
       <Card>
-        <CardHeader title={`${provider === 'dhan' ? 'Dhan' : provider === 'upstox' ? 'Upstox' : 'Angel One'} API Credentials`} />
+        <CardHeader title={`${provider === 'upstox' ? 'Upstox' : 'Angel One'} API Credentials`} />
         <div className="p-5 pt-0 space-y-4">
-          {provider === 'dhan' && (
-            <>
-              <InputField label="Client ID" value={creds.dhan_client_id} onChange={(v: string) => setCreds({ ...creds, dhan_client_id: v })} />
-              <InputField label="Access Token (JWT)" value={creds.dhan_access_token} onChange={(v: string) => setCreds({ ...creds, dhan_access_token: v })} show={show.dhan_token} onToggle={() => toggleShow('dhan_token')} secret />
-              <InputField label="API Key" value={creds.dhan_api_key} onChange={(v: string) => setCreds({ ...creds, dhan_api_key: v })} />
-              <InputField label="API Secret" value={creds.dhan_api_secret} onChange={(v: string) => setCreds({ ...creds, dhan_api_secret: v })} show={show.dhan_secret} onToggle={() => toggleShow('dhan_secret')} secret />
-            </>
-          )}
           {provider === 'upstox' && (
             <>
-              <InputField label="API Key" value={creds.upstox_api_key} onChange={(v: string) => setCreds({ ...creds, upstox_api_key: v })} />
-              <InputField label="API Secret" value={creds.upstox_api_secret} onChange={(v: string) => setCreds({ ...creds, upstox_api_secret: v })} show={show.upstox_secret} onToggle={() => toggleShow('upstox_secret')} secret />
-              <InputField label="Access Token" value={creds.upstox_access_token} onChange={(v: string) => setCreds({ ...creds, upstox_access_token: v })} show={show.upstox_token} onToggle={() => toggleShow('upstox_token')} secret />
+              <InputField label="API Key" value={creds.upstox_api_key} onChange={(v: string) => setCreds({ ...creds, upstox_api_key: v })} placeholder="4db5e1c4-2801-423b-bf84-9aef8852fbec" />
+              <InputField label="API Secret" value={creds.upstox_api_secret} onChange={(v: string) => setCreds({ ...creds, upstox_api_secret: v })} show={show.upstox_secret} onToggle={() => toggleShow('upstox_secret')} secret placeholder="5d69h994lu" />
+              <InputField label="Access Token (Valid 10 years!)" value={creds.upstox_access_token} onChange={(v: string) => setCreds({ ...creds, upstox_access_token: v })} show={show.upstox_token} onToggle={() => toggleShow('upstox_token')} secret placeholder="eyJ0eXAiOiJKV1QiLCJr..." />
+              <div className="text-xs text-profit bg-profit/10 p-3 rounded-button">
+                ✓ Upstox approved! Token valid until 2036. WebSocket enabled for instant prices.
+              </div>
             </>
           )}
           {provider === 'angelone' && (
