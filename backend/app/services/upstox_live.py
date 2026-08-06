@@ -175,56 +175,70 @@ class UpstoxLiveClient:
         if not missing_symbols:
             return results
 
-        # Build URL-encoded list of instrument keys for Upstox API
-        instrument_keys = [urllib.parse.quote(self.get_instrument_key(s)) for s in missing_symbols]
-        instrument_str = ",".join(instrument_keys)
+        # Process missing symbols in chunks of 15 to stay within URL length limits
+        chunk_size = 15
+        for i in range(0, len(missing_symbols), chunk_size):
+            chunk = missing_symbols[i : i + chunk_size]
+            instrument_keys = [self.get_instrument_key(s) for s in chunk]
+            symbol_param = ",".join(instrument_keys)
 
-        try:
-            client = await self._get_client()
-            url = f"{BASE_URL}/market-quote/quotes?symbol={instrument_str}"
-            response = await client.get(url)
+            try:
+                client = await self._get_client()
+                url = f"{BASE_URL}/market-quote/quotes"
+                try:
+                    response = await client.get(url, params={"symbol": symbol_param})
+                except RuntimeError:
+                    self._http = None
+                    client = await self._get_client()
+                    response = await client.get(url, params={"symbol": symbol_param})
 
-            if response.status_code == 200:
-                json_data = response.json()
-                data_dict = json_data.get("data", {})
+                if response.status_code == 200:
+                    json_data = response.json()
+                    data_dict = json_data.get("data", {})
 
-                for sym in missing_symbols:
-                    key = self.get_instrument_key(sym)
-                    # Upstox dict keys format can be "NSE_EQ:RELIANCE" or "NSE_EQ|INE..."
-                    quote_data = data_dict.get(key) or data_dict.get(key.replace("|", ":")) or data_dict.get(sym) or {}
-                    
-                    ltp = float(quote_data.get("last_price") or 0.0)
-                    ohlc = quote_data.get("ohlc") or {}
-                    open_p = float(ohlc.get("open") or ltp)
-                    high_p = float(ohlc.get("high") or ltp)
-                    low_p = float(ohlc.get("low") or ltp)
-                    close_p = float(ohlc.get("close") or ltp)
-                    change = float(quote_data.get("net_change") or (ltp - close_p if close_p else 0.0))
-                    change_pct = (change / close_p * 100.0) if close_p else 0.0
-                    volume = int(quote_data.get("volume") or 0)
+                    for sym in chunk:
+                        key = self.get_instrument_key(sym)
+                        key_colon = key.replace("|", ":")
+                        quote_data = (
+                            data_dict.get(key_colon)
+                            or data_dict.get(key)
+                            or data_dict.get(f"NSE_EQ:{sym}")
+                            or data_dict.get(f"NSE_INDEX:{sym}")
+                            or {}
+                        )
 
-                    q_item = {
-                        "symbol": sym,
-                        "ltp": ltp,
-                        "open": open_p,
-                        "high": high_p,
-                        "low": low_p,
-                        "close": close_p,
-                        "change": round(change, 2),
-                        "change_percent": round(change_pct, 2),
-                        "volume": volume,
-                        "timestamp": datetime.utcnow().isoformat(),
-                        "source": "upstox",
-                    }
+                        ltp = float(quote_data.get("last_price") or 0.0)
+                        ohlc = quote_data.get("ohlc") or {}
+                        open_p = float(ohlc.get("open") or ltp)
+                        high_p = float(ohlc.get("high") or ltp)
+                        low_p = float(ohlc.get("low") or ltp)
+                        close_p = float(ohlc.get("close") or ltp)
+                        change = float(quote_data.get("net_change") or (ltp - close_p if close_p else 0.0))
+                        change_pct = (change / close_p * 100.0) if close_p else 0.0
+                        volume = int(quote_data.get("volume") or 0)
 
-                    self._quote_cache[sym] = (now, q_item)
-                    results.append(q_item)
+                        q_item = {
+                            "symbol": sym,
+                            "ltp": ltp,
+                            "open": open_p,
+                            "high": high_p,
+                            "low": low_p,
+                            "close": close_p,
+                            "change": round(change, 2),
+                            "change_percent": round(change_pct, 2),
+                            "volume": volume,
+                            "timestamp": datetime.utcnow().isoformat(),
+                            "source": "upstox",
+                        }
 
-            else:
-                logger.error(f"Upstox market-quote HTTP {response.status_code}: {response.text[:200]}")
+                        self._quote_cache[sym] = (now, q_item)
+                        results.append(q_item)
 
-        except Exception as e:
-            logger.error(f"Upstox market-quote exception: {e}")
+                else:
+                    logger.error(f"Upstox market-quote HTTP {response.status_code}: {response.text[:200]}")
+
+            except Exception as e:
+                logger.error(f"Upstox market-quote exception: {e}")
 
         return results
 
