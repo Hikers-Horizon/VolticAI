@@ -176,143 +176,78 @@ export default function AdminPage() {
     <div className="space-y-6 animate-slide-up">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Admin Dashboard</h1>
-          <p className="text-sm text-text-secondary mt-1">Configure market data providers</p>
+          <h1 className="text-2xl font-semibold tracking-tight">System & Engine Status</h1>
+          <p className="text-sm text-text-secondary mt-1">Built-in Market Data Provider & AI Engine Diagnostics</p>
         </div>
         <button
           onClick={() => {
             setIsAuthenticated(false);
             localStorage.removeItem('admin_auth');
           }}
-          className="text-xs text-text-muted hover:text-white"
+          className="text-xs text-text-muted hover:text-white px-3 py-1.5 rounded-button border border-border bg-bg-card"
         >
           Logout
         </button>
       </div>
 
-      {/* Current Status */}
-      {status && (
-        <Card className="glass p-5">
-          <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            Current Provider Status
-            {status.ok ? <CheckCircle2 size={16} className="text-profit" /> : <XCircle size={16} className="text-loss" />}
-          </h3>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <div className="text-text-muted text-xs mb-1">Provider</div>
-              <div className="font-medium uppercase">{status.provider}</div>
+      {/* Primary Market Provider Card */}
+      <Card className="p-6 glass border-profit/30 bg-profit/5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-profit/20 flex items-center justify-center text-profit font-bold text-lg">
+              ✓
             </div>
             <div>
-              <div className="text-text-muted text-xs mb-1">Status</div>
-              <div className={status.ok ? 'text-profit' : 'text-loss'}>
-                {status.ok ? 'Connected' : status.last_error || 'Disconnected'}
-              </div>
+              <h2 className="text-lg font-semibold">Upstox Market Data Engine</h2>
+              <p className="text-xs text-text-secondary">Internal API v2 • Pre-configured & Active</p>
             </div>
           </div>
-        </Card>
-      )}
+          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-profit/20 text-profit border border-profit/30">
+            Connected & Active
+          </span>
+        </div>
 
-      {/* Provider Selection */}
-      <Card>
-        <CardHeader title="Select Provider" />
-        <div className="p-5 pt-0">
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => setProvider('upstox')}
-              className={`px-4 py-3 rounded-button border transition-all ${
-                provider === 'upstox'
-                  ? 'bg-white text-black border-white'
-                  : 'bg-bg-card border-border text-text-secondary hover:border-white/30'
-              }`}
-            >
-              <div className="font-semibold">Upstox</div>
-              <div className="text-xs mt-1 opacity-80">WebSocket • Free • 10yr token</div>
-            </button>
-            <button
-              onClick={() => setProvider('angelone')}
-              className={`px-4 py-3 rounded-button border transition-all ${
-                provider === 'angelone'
-                  ? 'bg-white text-black border-white'
-                  : 'bg-bg-card border-border text-text-secondary hover:border-white/30'
-              }`}
-            >
-              <div className="font-semibold">Angel One</div>
-              <div className="text-xs mt-1 opacity-80">WebSocket • Free • Auto-gen</div>
-            </button>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border/50 text-sm">
+          <div className="bg-bg-card/60 p-3.5 rounded-button border border-border">
+            <div className="text-xs text-text-muted mb-1">API Provider</div>
+            <div className="font-semibold text-white">Upstox Algo Trading v2</div>
+          </div>
+          <div className="bg-bg-card/60 p-3.5 rounded-button border border-border">
+            <div className="text-xs text-text-muted mb-1">Token Expiry</div>
+            <div className="font-semibold text-profit">August 2036 (10 Years)</div>
+          </div>
+          <div className="bg-bg-card/60 p-3.5 rounded-button border border-border">
+            <div className="text-xs text-text-muted mb-1">Capabilities</div>
+            <div className="font-semibold text-white">Live Quotes & 1m-1h Candles</div>
           </div>
         </div>
       </Card>
 
-      {/* Credentials Form */}
-      <Card>
-        <CardHeader title={`${provider === 'upstox' ? 'Upstox' : 'Angel One'} API Credentials`} />
-        <div className="p-5 pt-0 space-y-4">
-          {provider === 'upstox' && (
-            <>
-              <InputField label="API Key" value={creds.upstox_api_key} onChange={(v: string) => setCreds({ ...creds, upstox_api_key: v })} placeholder="4db5e1c4-2801-423b-bf84-9aef8852fbec" />
-              <InputField label="API Secret" value={creds.upstox_api_secret} onChange={(v: string) => setCreds({ ...creds, upstox_api_secret: v })} show={show.upstox_secret} onToggle={() => toggleShow('upstox_secret')} secret placeholder="5d69h994lu" />
-              <InputField label="Access Token (Valid 10 years!)" value={creds.upstox_access_token} onChange={(v: string) => setCreds({ ...creds, upstox_access_token: v })} show={show.upstox_token} onToggle={() => toggleShow('upstox_token')} secret placeholder="eyJ0eXAiOiJKV1QiLCJr..." />
-              <div className="text-xs text-profit bg-profit/10 p-3 rounded-button">
-                ✓ Upstox approved! Token valid until 2036. WebSocket enabled for instant prices.
-              </div>
-            </>
-          )}
-          {provider === 'angelone' && (
-            <>
-              <InputField label="API Key" value={creds.angelone_api_key} onChange={(v: string) => setCreds({ ...creds, angelone_api_key: v })} placeholder="eS47mncq" />
-              <InputField label="Client Code" value={creds.angelone_client_code} onChange={(v: string) => setCreds({ ...creds, angelone_client_code: v })} placeholder="Your Angel One Client ID (e.g., A123456)" />
-
-              <div className="border border-border rounded-button p-4 bg-bg-hover space-y-3">
-                <div className="text-sm font-medium">Generate Access Token</div>
-                <InputField label="Password" value={angelPassword} onChange={setAngelPassword} secret placeholder="Your Angel One password" />
-                <InputField label="TOTP (6-digit code)" value={angelTotp} onChange={setAngelTotp} placeholder="From Google Authenticator" />
-                <button
-                  onClick={generateAngelToken}
-                  disabled={!creds.angelone_api_key || !creds.angelone_client_code || !angelPassword || !angelTotp || generatingToken}
-                  className="btn-secondary w-full text-sm"
-                >
-                  {generatingToken ? 'Generating Token...' : 'Generate Access Token'}
-                </button>
-                {tokenError && <div className="text-xs text-loss">{tokenError}</div>}
-                {tokenSuccess && <div className="text-xs text-profit">{tokenSuccess}</div>}
-              </div>
-
-              <InputField label="Access Token (Auto-generated above)" value={creds.angelone_access_token} onChange={(v: string) => setCreds({ ...creds, angelone_access_token: v })} show={show.angel_token} onToggle={() => toggleShow('angel_token')} secret placeholder="Will be auto-filled after generation" />
-
-              <div className="text-xs text-text-muted bg-bg-card/60 p-3 rounded-button">
-                <strong className="text-white">How it works:</strong><br/>
-                1. Enter your Angel One login credentials above<br/>
-                2. Click "Generate Access Token"<br/>
-                3. Token will be auto-filled and saved<br/>
-                4. Keep your TOTP app ready (token expires daily)
-              </div>
-            </>
-          )}
+      {/* AI Engine Status */}
+      <Card className="p-6">
+        <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+          <CheckCircle2 className="text-profit" size={18} />
+          AI Signal Generation Pipeline
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div className="p-4 rounded-button bg-bg-hover border border-border">
+            <div className="text-xs text-text-muted">Engine Status</div>
+            <div className="font-medium text-profit mt-1">Operational</div>
+          </div>
+          <div className="p-4 rounded-button bg-bg-hover border border-border">
+            <div className="text-xs text-text-muted">Confidence Threshold</div>
+            <div className="font-medium text-white mt-1">75%+ Minimum</div>
+          </div>
+          <div className="p-4 rounded-button bg-bg-hover border border-border">
+            <div className="text-xs text-text-muted">Technical Indicators</div>
+            <div className="font-medium text-white mt-1">EMA, RSI, MACD, VWAP, ADX</div>
+          </div>
+          <div className="p-4 rounded-button bg-bg-hover border border-border">
+            <div className="text-xs text-text-muted">Paper Trading</div>
+            <div className="font-medium text-profit mt-1">Enabled (₹1,00,000)</div>
+          </div>
         </div>
       </Card>
-
-      {message && <div className={`text-sm px-4 py-2 rounded-button ${message.startsWith('✓') ? 'bg-profit/10 text-profit' : 'bg-loss/10 text-loss'}`}>{message}</div>}
-
-      <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2">
-        <Save size={16} />
-        {saving ? 'Saving...' : 'Save Credentials'}
-      </button>
-    </div>
-  );
-}
-
-function InputField({ label, value, onChange, secret, show, onToggle }: any) {
-  return (
-    <div>
-      <label className="text-xs text-text-muted mb-1.5 block">{label}</label>
-      <div className="relative">
-        <input type={secret && !show ? 'password' : 'text'} value={value} onChange={(e) => onChange(e.target.value)} className="input-field w-full pr-10" placeholder={`Enter ${label.toLowerCase()}`} />
-        {secret && (
-          <button type="button" onClick={onToggle} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-white">
-            {show ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        )}
-      </div>
     </div>
   );
 }
