@@ -4,7 +4,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { TopNav } from '@/components/layout/TopNav';
 
 export const metadata: Metadata = {
-  title: 'TradeAI — Premium Intraday Trading',
+  title: 'Voltic AI — Premium Intraday Trading',
   description: 'AI-powered intraday trading platform for Indian markets',
 };
 

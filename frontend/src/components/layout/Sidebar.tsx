@@ -49,17 +49,17 @@ export function Sidebar() {
         {!collapsed && (
           <>
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white">
-              <span className="text-xs font-bold text-black">AI</span>
+              <span className="text-xs font-bold text-black">V</span>
             </div>
             <div>
-              <div className="text-sm font-semibold tracking-tight">TradeAI</div>
+              <div className="text-sm font-semibold tracking-tight">Voltic AI</div>
               <div className="text-[10px] text-text-muted tracking-wider uppercase">Intraday</div>
             </div>
           </>
         )}
         {collapsed && (
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white mx-auto">
-            <span className="text-xs font-bold text-black">AI</span>
+            <span className="text-xs font-bold text-black">V</span>
           </div>
         )}
 
