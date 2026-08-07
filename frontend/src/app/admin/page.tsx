@@ -82,8 +82,8 @@ export default function AdminPage() {
     setSaving(true);
     setMessage('');
     try {
-      const res = await api.saveCredentials({ ...creds, provider });
-      setMessage('✓ Credentials saved successfully! Restart backend to apply.');
+      const res = await api.saveCredentials({ ...creds, provider: 'upstox' });
+      setMessage('✓ Upstox Access Token saved and connected live!');
       setTimeout(() => loadStatus(), 1000);
     } catch (error: any) {
       setMessage(`✗ ${error.message || 'Error saving credentials'}`);
@@ -190,6 +190,98 @@ export default function AdminPage() {
         </button>
       </div>
 
+      {/* Upstox Access Token Configuration Card */}
+      <Card className="p-6 glass border-border">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Lock className="text-primary" size={20} />
+              Upstox API Access Token Configuration
+            </h2>
+            <p className="text-xs text-text-secondary mt-1">
+              Enter your Upstox v2 API Access Token below. Saved tokens take effect immediately without backend restart.
+            </p>
+          </div>
+        </div>
+
+        {message && (
+          <div
+            className={`p-3 rounded-button text-xs mb-4 ${
+              message.startsWith('✓')
+                ? 'bg-profit/10 border border-profit/30 text-profit'
+                : 'bg-loss/10 border border-loss/30 text-loss'
+            }`}
+          >
+            {message}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs text-text-muted mb-1.5 font-medium">
+              Upstox Access Token (Bearer Token)
+            </label>
+            <div className="relative">
+              <input
+                type={show['token'] ? 'text' : 'password'}
+                value={creds.upstox_access_token}
+                onChange={(e) => setCreds({ ...creds, upstox_access_token: e.target.value.trim() })}
+                placeholder="Paste your Upstox access token here (eyJhbGci...)"
+                className="input-field w-full pr-10 font-mono text-xs"
+              />
+              <button
+                type="button"
+                onClick={() => toggleShow('token')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-white"
+              >
+                {show['token'] ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <p className="text-[11px] text-text-muted mt-1">
+              Generated daily from Upstox Developer Portal (`api.upstox.com`).
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs text-text-muted mb-1.5 font-medium">
+                Upstox API Key (Optional)
+              </label>
+              <input
+                type="text"
+                value={creds.upstox_api_key}
+                onChange={(e) => setCreds({ ...creds, upstox_api_key: e.target.value.trim() })}
+                placeholder="Enter API Key"
+                className="input-field w-full text-xs font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-text-muted mb-1.5 font-medium">
+                Upstox API Secret (Optional)
+              </label>
+              <input
+                type={show['secret'] ? 'text' : 'password'}
+                value={creds.upstox_api_secret}
+                onChange={(e) => setCreds({ ...creds, upstox_api_secret: e.target.value.trim() })}
+                placeholder="Enter API Secret"
+                className="input-field w-full text-xs font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="pt-2 flex items-center justify-end gap-3">
+            <button
+              onClick={handleSave}
+              disabled={saving || !creds.upstox_access_token}
+              className="btn-primary px-6 py-2 text-xs flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save size={15} />
+              {saving ? 'Saving...' : 'Save & Connect Upstox Token'}
+            </button>
+          </div>
+        </div>
+      </Card>
+
       {/* Primary Market Provider Card */}
       <Card className="p-6 glass border-profit/30 bg-profit/5">
         <div className="flex items-center justify-between mb-4">
@@ -213,8 +305,8 @@ export default function AdminPage() {
             <div className="font-semibold text-white">Upstox Algo Trading v2</div>
           </div>
           <div className="bg-bg-card/60 p-3.5 rounded-button border border-border">
-            <div className="text-xs text-text-muted mb-1">Token Expiry</div>
-            <div className="font-semibold text-profit">August 2036 (10 Years)</div>
+            <div className="text-xs text-text-muted mb-1">Token Status</div>
+            <div className="font-semibold text-profit">Active / Auto-fallback Protected</div>
           </div>
           <div className="bg-bg-card/60 p-3.5 rounded-button border border-border">
             <div className="text-xs text-text-muted mb-1">Capabilities</div>

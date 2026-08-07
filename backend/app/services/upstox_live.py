@@ -83,17 +83,29 @@ class UpstoxLiveClient:
     def __init__(self):
         self.api_key = settings.UPSTOX_API_KEY
         self.api_secret = settings.UPSTOX_API_SECRET
-        self.access_token = settings.UPSTOX_ACCESS_TOKEN
         self._http: Optional[httpx.AsyncClient] = None
         self._quote_cache: Dict[str, Tuple[float, dict]] = {}
         self._hist_cache: Dict[str, Tuple[float, List[dict]]] = {}
         self._cache_ttl = 2.0  # 2 seconds quote cache
         self._hist_ttl = 30.0  # 30 seconds historical candle cache
+        self._auth_bad_until = 0.0
+
+    @property
+    def access_token(self) -> str:
+        return settings.UPSTOX_ACCESS_TOKEN
+
+    def reset_auth_status(self):
+        self._auth_bad_until = 0.0
+        self._hist_cache.clear()
+        self._quote_cache.clear()
 
     @property
     def configured(self) -> bool:
-        """Returns True if Upstox credentials / access token are present."""
-        return bool(self.access_token and len(self.access_token) > 20)
+        """Returns True if Upstox credentials / access token are present and not expired."""
+        if time.monotonic() < self._auth_bad_until:
+            return False
+        token = self.access_token
+        return bool(token and len(token) > 20)
 
     def _headers(self) -> dict:
         return {
@@ -235,7 +247,11 @@ class UpstoxLiveClient:
                         results.append(q_item)
 
                 else:
-                    logger.error(f"Upstox market-quote HTTP {response.status_code}: {response.text[:200]}")
+                    if response.status_code == 401:
+                        self._auth_bad_until = time.monotonic() + 300.0
+                        logger.error(f"Upstox 401 Unauthorized: token expired or invalid")
+                    else:
+                        logger.error(f"Upstox market-quote HTTP {response.status_code}: {response.text[:200]}")
 
             except Exception as e:
                 logger.error(f"Upstox market-quote exception: {e}")
@@ -270,21 +286,27 @@ class UpstoxLiveClient:
                 res_hist = await client.get(url_hist)
                 if res_hist.status_code == 200:
                     candles_raw = res_hist.json().get("data", {}).get("candles") or []
+                elif res_hist.status_code == 401:
+                    self._auth_bad_until = time.monotonic() + 300.0
             else:
-                # Upstox 1minute intraday endpoint
-                url = f"{BASE_URL}/historical-candle/intraday/{instrument_key}/1minute"
-                response = await client.get(url)
-                if response.status_code == 200:
-                    candles_raw = response.json().get("data", {}).get("candles") or []
-                
-                # Fallback to multi-day candles if intraday is empty
-                if not candles_raw:
-                    to_date = datetime.now().strftime("%Y-%m-%d")
-                    from_date = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
-                    url_hist = f"{BASE_URL}/historical-candle/{instrument_key}/day/{to_date}/{from_date}"
-                    res_hist = await client.get(url_hist)
-                    if res_hist.status_code == 200:
-                        candles_raw = res_hist.json().get("data", {}).get("candles") or []
+                # First try multi-day 1minute candles to get 100-500+ bars across days
+                to_date = datetime.now().strftime("%Y-%m-%d")
+                from_date = (datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d")
+                url_hist = f"{BASE_URL}/historical-candle/{instrument_key}/1minute/{to_date}/{from_date}"
+                res_hist = await client.get(url_hist)
+                if res_hist.status_code == 200:
+                    candles_raw = res_hist.json().get("data", {}).get("candles") or []
+                elif res_hist.status_code == 401:
+                    self._auth_bad_until = time.monotonic() + 300.0
+
+                # Fallback to intraday 1minute endpoint if multi-day is empty
+                if not candles_raw and self.configured:
+                    url = f"{BASE_URL}/historical-candle/intraday/{instrument_key}/1minute"
+                    response = await client.get(url)
+                    if response.status_code == 200:
+                        candles_raw = response.json().get("data", {}).get("candles") or []
+                    elif response.status_code == 401:
+                        self._auth_bad_until = time.monotonic() + 300.0
 
             parsed_candles: List[Dict[str, Any]] = []
             # Upstox format: [timestamp, open, high, low, close, volume, open_interest]

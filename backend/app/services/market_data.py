@@ -6,6 +6,7 @@ import pandas as pd
 from loguru import logger
 from app.services.dhan_live import dhan_client
 from app.services.upstox_live import upstox_client
+from app.services.yahoo_live import yahoo_client
 
 DEFAULT_UNIVERSE = [
     "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN",
@@ -39,7 +40,7 @@ class MarketDataService:
             return upstox_client
         if dhan_client.configured:
             return dhan_client
-        return upstox_client
+        return yahoo_client
 
     async def provider_status(self) -> dict:
         client = self._active_client()
@@ -54,12 +55,11 @@ class MarketDataService:
         )
         vix = None
         client = self._active_client()
-        if client.configured:
-            try:
-                q = await client.get_quote("INDIA VIX")
-                vix = q.get("ltp")
-            except Exception:
-                pass
+        try:
+            q = await client.get_quote("INDIA VIX")
+            vix = q.get("ltp")
+        except Exception:
+            pass
         return {
             "is_open": is_open,
             "current_time": now.isoformat(),
@@ -67,34 +67,72 @@ class MarketDataService:
             "market_close": "15:30",
             "status": "OPEN" if is_open else "CLOSED",
             "india_vix": vix,
-            "data_source": getattr(client, "name", "upstox") if client.configured else "unconfigured",
-            "live": client.configured,
+            "data_source": getattr(client, "name", "broker"),
+            "live": True,
         }
 
     async def get_quote(self, symbol: str, exchange: str = "NSE") -> Dict[str, Any]:
         client = self._active_client()
-        if not client.configured:
-            logger.warning(f"No configured provider, returning default quote for {symbol}")
-            return {"symbol": symbol.upper(), "ltp": 0.0, "change": 0.0, "change_percent": 0.0}
-        return await client.get_quote(symbol)
+        try:
+            q = await client.get_quote(symbol)
+            if q and float(q.get("ltp") or 0) > 0:
+                return q
+        except Exception as e:
+            logger.debug(f"Primary broker get_quote failed for {symbol}: {e}")
+
+        # Fallback to Yahoo Finance
+        return await yahoo_client.get_quote(symbol)
 
     async def get_quotes(self, symbols: List[str], exchange: str = "NSE") -> List[Dict]:
         client = self._active_client()
-        if not client.configured:
-            return []
-        return await client.get_quotes(symbols)
+        quotes = []
+        if client != yahoo_client:
+            try:
+                quotes = await client.get_quotes(symbols)
+            except Exception as e:
+                logger.debug(f"Primary broker get_quotes failed: {e}")
+
+        valid_map = {q["symbol"]: q for q in quotes if q.get("ltp") and float(q["ltp"]) > 0}
+        missing = [s for s in symbols if s.upper() not in valid_map]
+
+        if missing:
+            yahoo_quotes = await yahoo_client.get_quotes(missing)
+            for q in yahoo_quotes:
+                valid_map[q["symbol"]] = q
+
+        return [valid_map[s.upper()] for s in symbols if s.upper() in valid_map]
 
     async def get_historical(
         self, symbol: str, interval: str = "5minute",
         from_date: Optional[str] = None, to_date: Optional[str] = None,
     ) -> Dict[str, Any]:
         client = self._active_client()
-        data = await client.get_historical(symbol, interval)
-        return {"symbol": symbol.upper(), "interval": interval, "data": data, "source": "upstox" if client == upstox_client else "dhan"}
+        data = []
+        try:
+            data = await client.get_historical(symbol, interval)
+        except Exception as e:
+            logger.debug(f"Broker get_historical failed for {symbol}: {e}")
+
+        if not data:
+            data = await yahoo_client.get_historical(symbol, interval)
+            return {"symbol": symbol.upper(), "interval": interval, "data": data, "source": "yahoo"}
+
+        return {"symbol": symbol.upper(), "interval": interval, "data": data, "source": getattr(client, "name", "broker")}
 
     async def get_ohlcv_df(self, symbol: str, interval: str = "5minute") -> pd.DataFrame:
         client = self._active_client()
-        return await client.get_ohlcv_df(symbol, interval)
+        df = pd.DataFrame()
+        try:
+            df = await client.get_ohlcv_df(symbol, interval)
+        except Exception as e:
+            logger.debug(f"Broker get_ohlcv_df failed for {symbol}: {e}")
+
+        if df is None or len(df) < 52:
+            df_yahoo = await yahoo_client.get_ohlcv_df(symbol, interval)
+            if df_yahoo is not None and len(df_yahoo) >= len(df if df is not None else []):
+                return df_yahoo
+
+        return df if df is not None else pd.DataFrame()
 
     async def top_gainers(self, limit: int = 10) -> List[Dict]:
         # Prefer momentum universe for real day-movers

@@ -53,6 +53,10 @@ async def save_credentials(creds: CredentialsInput):
             env_dict['UPSTOX_API_SECRET'] = creds.upstox_api_secret
         if creds.upstox_access_token:
             env_dict['UPSTOX_ACCESS_TOKEN'] = creds.upstox_access_token
+            from app.core.config import settings
+            from app.services.upstox_live import upstox_client
+            settings.UPSTOX_ACCESS_TOKEN = creds.upstox_access_token
+            upstox_client.reset_auth_status()
 
         if creds.angelone_api_key:
             env_dict['ANGELONE_API_KEY'] = creds.angelone_api_key
@@ -65,6 +69,8 @@ async def save_credentials(creds: CredentialsInput):
             env_dict['DHAN_CLIENT_ID'] = creds.dhan_client_id
         if creds.dhan_access_token:
             env_dict['DHAN_ACCESS_TOKEN'] = creds.dhan_access_token
+            from app.core.config import settings
+            settings.DHAN_ACCESS_TOKEN = creds.dhan_access_token
         
         # Write back to .env
         with open(env_path, 'w') as f:
@@ -73,7 +79,7 @@ async def save_credentials(creds: CredentialsInput):
         
         return {
             "success": True,
-            "message": "Credentials saved successfully. Restart backend to apply.",
+            "message": "Credentials saved and updated live successfully.",
             "provider": creds.provider
         }
     
