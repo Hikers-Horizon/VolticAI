@@ -108,11 +108,39 @@ class OptionsSignalService:
 
         atm_strike = round(spot / step) * step
 
+        # Fetch live option chain if available
+        opt_chain = {}
+        try:
+            opt_chain = await market_service.options_chain(symbol)
+        except Exception:
+            pass
+
+        strikes_data = opt_chain.get("strikes", [])
+        strike_map = {float(s["strike"]): s for s in strikes_data if "strike" in s}
+
+        # Premium helper function
+        def get_premium(opt_type: str, strike_val: float) -> float:
+            # 1. Try live option chain quote
+            if strike_val in strike_map:
+                stk = strike_map[strike_val]
+                live_price = stk.get("ce_ltp" if opt_type == "CE" else "pe_ltp")
+                if live_price and float(live_price) > 0:
+                    return round(float(live_price), 1)
+
+            # 2. Realistic Model Fallback:
+            # Index options: ~0.9% - 1.2% of spot
+            if symbol in ("NIFTY", "FINNIFTY"):
+                return round(max(spot * 0.009, 45.0), 1)
+            elif symbol == "BANKNIFTY":
+                return round(max(spot * 0.009, 150.0), 1)
+            else:
+                # Stock options (RELIANCE, TCS, INFY, etc.): ATM premium is ~1.5% - 2.0% of spot (~₹21 for RELIANCE ₹1320)
+                return round(max(spot * 0.016, 10.0), 1)
+
         # Generate CALL Option (CE) Signal
         if trend == "BULLISH" or change_pct > 0.1 or rsi > 52:
             ce_strike = atm_strike
-            # Estimate option premium (approx 0.8% to 1.5% of spot for index ATM options)
-            est_premium = round(max(spot * 0.008, 40.0), 1) if "NIFTY" in symbol else round(max(spot * 0.012, 120.0), 1)
+            est_premium = get_premium("CE", ce_strike)
             
             entry_min = round(est_premium * 0.98, 1)
             entry_max = round(est_premium * 1.02, 1)
@@ -151,7 +179,7 @@ class OptionsSignalService:
         # Generate PUT Option (PE) Signal
         if trend == "BEARISH" or change_pct < -0.1 or rsi < 48:
             pe_strike = atm_strike
-            est_premium = round(max(spot * 0.008, 40.0), 1) if "NIFTY" in symbol else round(max(spot * 0.012, 120.0), 1)
+            est_premium = get_premium("PE", pe_strike)
             
             entry_min = round(est_premium * 0.98, 1)
             entry_max = round(est_premium * 1.02, 1)
