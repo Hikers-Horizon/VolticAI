@@ -363,6 +363,75 @@ class UpstoxLiveClient:
 
         return df
 
+    async def option_chain(self, symbol: str, expiry: Optional[str] = None) -> dict:
+        """Fetch live option chain directly from Upstox API v2."""
+        if not self.configured:
+            return {"symbol": symbol.upper(), "expiry": expiry, "spot": 0.0, "strikes": []}
+
+        sym_clean = symbol.upper().strip()
+        raw_key = self.get_instrument_key(sym_clean)
+
+        try:
+            client = await self._get_client()
+            target_expiry = expiry
+
+            # If expiry not provided, fetch contracts to determine nearest active expiry
+            if not target_expiry:
+                url_contract = f"{BASE_URL}/option/contract"
+                res_contract = await client.get(url_contract, params={"instrument_key": raw_key})
+                if res_contract.status_code == 200:
+                    contracts = res_contract.json().get("data", [])
+                    expiries = sorted(list(set(c.get("expiry") for c in contracts if c.get("expiry"))))
+                    if expiries:
+                        target_expiry = expiries[0]
+
+            if not target_expiry:
+                target_expiry = datetime.now().strftime("%Y-%m-%d")
+
+            url_chain = f"{BASE_URL}/option/chain"
+            res_chain = await client.get(url_chain, params={"instrument_key": raw_key, "expiry_date": target_expiry})
+            if res_chain.status_code != 200:
+                return {"symbol": sym_clean, "expiry": target_expiry, "spot": 0.0, "strikes": []}
+
+            chain_data = res_chain.json().get("data", [])
+            spot_price = float(chain_data[0].get("underlying_spot_price") or 0.0) if chain_data else 0.0
+
+            strikes = []
+            for item in chain_data:
+                strike_val = float(item.get("strike_price") or 0.0)
+                ce = item.get("call_options") or {}
+                pe = item.get("put_options") or {}
+
+                ce_md = ce.get("market_data") or {}
+                pe_md = pe.get("market_data") or {}
+
+                ce_greeks = ce.get("option_greeks") or {}
+                pe_greeks = pe.get("option_greeks") or {}
+
+                strikes.append({
+                    "strike": strike_val,
+                    "ce_ltp": float(ce_md.get("ltp") or 0.0) if ce_md.get("ltp") else None,
+                    "ce_oi": float(ce_md.get("oi") or 0.0) if ce_md.get("oi") else None,
+                    "ce_volume": int(ce_md.get("volume") or 0) if ce_md.get("volume") else None,
+                    "ce_iv": float(ce_greeks.get("iv") or 0.0) if ce_greeks.get("iv") else None,
+                    "pe_ltp": float(pe_md.get("ltp") or 0.0) if pe_md.get("ltp") else None,
+                    "pe_oi": float(pe_md.get("oi") or 0.0) if pe_md.get("oi") else None,
+                    "pe_volume": int(pe_md.get("volume") or 0) if pe_md.get("volume") else None,
+                    "pe_iv": float(pe_greeks.get("iv") or 0.0) if pe_greeks.get("iv") else None,
+                })
+
+            strikes.sort(key=lambda x: x["strike"])
+            return {
+                "symbol": sym_clean,
+                "expiry": target_expiry,
+                "spot": spot_price,
+                "strikes": strikes,
+                "source": "upstox",
+            }
+        except Exception as e:
+            logger.error(f"Upstox option chain error for {sym_clean}: {e}")
+            return {"symbol": sym_clean, "expiry": expiry, "spot": 0.0, "strikes": [], "error": str(e)}
+
 
 # Global instance
 upstox_client = UpstoxLiveClient()

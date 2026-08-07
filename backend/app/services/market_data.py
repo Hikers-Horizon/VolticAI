@@ -234,6 +234,14 @@ class MarketDataService:
         return await self.get_quotes(INDEX_SYMBOLS)
 
     async def options_chain(self, symbol: str, expiry: Optional[str] = None) -> dict:
+        client = self._active_client()
+        if hasattr(client, "option_chain"):
+            try:
+                res = await client.option_chain(symbol, expiry)
+                if res and res.get("strikes"):
+                    return res
+            except Exception as e:
+                logger.debug(f"Client option_chain failed for {symbol}: {e}")
         return await dhan_client.option_chain(symbol, expiry)
 
     async def breadth(self) -> dict:
